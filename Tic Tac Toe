@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
+  <title>Tic Tac Toe 🎮</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+    :root {
+      --bg: #0d0d1a;
+      --card: #151528;
+      --cell: #1e1e38;
+      --x: #ff4d6d;
+      --o: #00c9a7;
+      --draw: #f4a261;
+      --text: #f0f0ff;
+      --muted: #6b6b9a;
+      --accent: #7c5cbf;
+    }
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 16px 12px 32px;
+    }
+    .header { text-align: center; margin-bottom: 18px; }
+    .header h1 {
+      font-size: 2rem;
+      font-weight: 800;
+      background: linear-gradient(135deg, var(--x), var(--accent), var(--o));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    .header p { color: var(--muted); font-size: 0.8rem; margin-top: 2px; }
+    .scoreboard {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 18px;
+      width: 100%;
+      max-width: 360px;
+    }
+    .score-card {
+      flex: 1;
+      background: var(--card);
+      border-radius: 14px;
+      padding: 12px 8px;
+      text-align: center;
+      border: 1.5px solid transparent;
+      transition: border 0.3s;
+    }
+    .score-card.active-x { border-color: var(--x); }
+    .score-card.active-o { border-color: var(--o); }
+    .score-card .label { font-size: 0.7rem; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; }
+    .score-card .player-name { font-size: 0.85rem; font-weight: 700; margin: 3px 0; }
+    .score-card.x-card .player-name { color: var(--x); }
+    .score-card.o-card .player-name { color: var(--o); }
+    .score-card.draw-card .player-name { color: var(--draw); }
+    .score-card .score-num { font-size: 1.8rem; font-weight: 900; }
+    .turn-bar {
+      width: 100%;
+      max-width: 360px;
+      background: var(--card);
+      border-radius: 12px;
+      padding: 10px 16px;
+      text-align: center;
+      font-size: 0.95rem;
+      font-weight: 600;
+      margin-bottom: 16px;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+      width: 100%;
+      max-width: 360px;
+      margin-bottom: 20px;
+    }
+    .cell {
+      background: var(--cell);
+      border-radius: 16px;
+      aspect-ratio: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 2.6rem;
+      font-weight: 900;
+      cursor: pointer;
+      border: 2px solid transparent;
+      transition: transform 0.1s, background 0.2s;
+      user-select: none;
+    }
+    .cell:active { transform: scale(0.93); }
+    .cell.x { color: var(--x); border-color: #ff4d6d33; }
+    .cell.o { color: var(--o); border-color: #00c9a733; }
+    .cell.winner-cell {
+      background: var(--accent);
+      border-color: var(--accent);
+      animation: pulse 0.6s ease infinite alternate;
+    }
+    @keyframes pulse {
+      from { box-shadow: 0 0 0px var(--accent); }
+      to   { box-shadow: 0 0 18px var(--accent); }
+    }
+    .cell.pop { animation: popIn 0.2s ease; }
+    @keyframes popIn {
+      0%   { transform: scale(0.5); }
+      70%  { transform: scale(1.1); }
+      100% { transform: scale(1); }
+    }
+    .result-banner {
+      width: 100%;
+      max-width: 360px;
+      border-radius: 14px;
+      padding: 14px;
+      text-align: center;
+      font-size: 1.1rem;
+      font-weight: 700;
+      margin-bottom: 16px;
+      display: none;
+      animation: slideDown 0.3s ease;
+    }
+    @keyframes slideDown {
+      from { opacity: 0; transform: translateY(-10px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    .result-banner.win  { background: #7c5cbf33; border: 1.5px solid var(--accent); color: var(--text); display: block; }
+    .result-banner.draw { background: #f4a26133; border: 1.5px solid var(--draw); color: var(--draw); display: block; }
+    .btn-row {
+      display: flex;
+      gap: 10px;
+      width: 100%;
+      max-width: 360px;
+      margin-bottom: 12px;
+    }
+    .btn {
+      flex: 1;
+      padding: 13px;
+      border: none;
+      border-radius: 12px;
+      font-size: 0.9rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: opacity 0.2s, transform 0.1s;
+    }
+    .btn:active { transform: scale(0.96); opacity: 0.85; }
+    .btn-next  { background: var(--accent); color: #fff; }
+    .btn-reset { background: var(--card); color: var(--muted); border: 1.5px solid #2a2a4a; }
+    .name-setup {
+      width: 100%;
+      max-width: 360px;
+      background: var(--card);
+      border-radius: 16px;
+      padding: 20px;
+      margin-bottom: 20px;
+    }
+    .name-setup h2 { font-size: 1rem; color: var(--muted); margin-bottom: 14px; text-align: center; }
+    .name-row { display: flex; flex-direction: column; gap: 10px; margin-bottom: 14px; }
+    .name-input-wrap { position: relative; }
+    .name-input-wrap span { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); font-size: 1rem; }
+    .name-input-wrap input {
+      width: 100%;
+      background: var(--cell);
+      border: 1.5px solid #2a2a4a;
+      border-radius: 10px;
+      padding: 11px 12px 11px 36px;
+      color: var(--text);
+      font-size: 0.95rem;
+      outline: none;
+    }
+    .name-input-wrap input:focus { border-color: var(--accent); }
+    .btn-start {
+      width: 100%;
+      padding: 13px;
+      background: linear-gradient(135deg, var(--x), var(--accent));
+      border: none;
+      border-radius: 12px;
+      color: #fff;
+      font-size: 1rem;
+      font-weight: 800;
+      cursor: pointer;
+    }
+    .game-area { display: none; width: 100%; flex-direction: column; align-items: center; }
+  </style>
+</head>
+<body>
+
+<div class="header">
+  <h1>Tic Tac Toe</h1>
+  <p>2 Players • Offline • Mobile Ready</p>
+</div>
+
+<div class="name-setup" id="nameSetup">
+  <h2>👥 Players ka naam likho</h2>
+  <div class="name-row">
+    <div class="name-input-wrap">
+      <span>❌</span>
+      <input type="text" id="nameX" placeholder="Player X ka naam" maxlength="12" />
+    </div>
+    <div class="name-input-wrap">
+      <span>⭕</span>
+      <input type="text" id="nameO" placeholder="Player O ka naam" maxlength="12" />
+    </div>
+  </div>
+  <button class="btn-start" onclick="startGame()">🎮 Game Shuru Karo</button>
+</div>
+
+<div class="game-area" id="gameArea">
+  <div class="scoreboard">
+    <div class="score-card x-card active-x" id="cardX">
+      <div class="label">Player</div>
+      <div class="player-name" id="labelX">Player X</div>
+      <div class="score-num" id="scoreX">0</div>
+    </div>
+    <div class="score-card draw-card">
+      <div class="label">Draw</div>
+      <div class="player-name">🤝</div>
+      <div class="score-num" id="scoreDraw">0</div>
+    </div>
+    <div class="score-card o-card" id="cardO">
+      <div class="label">Player</div>
+      <div class="player-name" id="labelO">Player O</div>
+      <div class="score-num" id="scoreO">0</div>
+    </div>
+  </div>
+
+  <div class="turn-bar" id="turnBar">❌ Player X ki baari</div>
+  <div class="result-banner" id="resultBanner"></div>
+
+  <div class="grid">
+    <div class="cell" onclick="handleClick(0)"></div>
+    <div class="cell" onclick="handleClick(1)"></div>
+    <div class="cell" onclick="handleClick(2)"></div>
+    <div class="cell" onclick="handleClick(3)"></div>
+    <div class="cell" onclick="handleClick(4)"></div>
+    <div class="cell" onclick="handleClick(5)"></div>
+    <div class="cell" onclick="handleClick(6)"></div>
+    <div class="cell" onclick="handleClick(7)"></div>
+    <div class="cell" onclick="handleClick(8)"></div>
+  </div>
+
+  <div class="btn-row">
+    <button class="btn btn-next" onclick="nextRound()">▶ Agla Round</button>
+    <button class="btn btn-reset" onclick="resetAll()">🔄 Reset</button>
+  </div>
+</div>
+
+<script>
+  let board = Array(9).fill('');
+  let current = 'X';
+  let scores = { X: 0, O: 0, Draw: 0 };
+  let names = { X: 'Player X', O: 'Player O' };
+  let gameOver = false;
+  const WINS = [[0,1,2],[3,4,5],[6,7,8],[0,3,6],[1,4,7],[2,5,8],[0,4,8],[2,4,6]];
+
+  function startGame() {
+    const nx = document.getElementById('nameX').value.trim();
+    const no = document.getElementById('nameO').value.trim();
+    names.X = nx || 'Player X';
+    names.O = no || 'Player O';
+    document.getElementById('labelX').textContent = names.X;
+    document.getElementById('labelO').textContent = names.O;
+    document.getElementById('nameSetup').style.display = 'none';
+    document.getElementById('gameArea').style.display = 'flex';
+    updateTurnBar();
+  }
+
+  function handleClick(idx) {
+    if (board[idx] !== '' || gameOver) return;
+    board[idx] = current;
+    const cells = document.querySelectorAll('.cell');
+    cells[idx].textContent = current === 'X' ? '✕' : '○';
+    cells[idx].classList.add(current.toLowerCase(), 'pop');
+
+    const winCombo = getWinner();
+    if (winCombo) {
+      winCombo.forEach(i => cells[i].classList.add('winner-cell'));
+      scores[current]++;
+      updateScores();
+      showResult('win', '🎉 ' + names[current] + ' Jeet Gaya!');
+      gameOver = true;
+      document.getElementById('turnBar').style.display = 'none';
+      return;
+    }
+    if (board.every(c => c !== '')) {
+      scores.Draw++;
+      updateScores();
+      showResult('draw', '🤝 Draw! Koi nahi jeeta');
+      gameOver = true;
+      document.getElementById('turnBar').style.display = 'none';
+      return;
+    }
+    current = current === 'X' ? 'O' : 'X';
+    updateTurnBar();
+    updateActiveCard();
+  }
+
+  function getWinner() {
+    for (const combo of WINS) {
+      if (combo.every(i => board[i] === current)) return combo;
+    }
+    return null;
+  }
+
+  function showResult(type, msg) {
+    const banner = document.getElementById('resultBanner');
+    banner.textContent = msg;
+    banner.className = 'result-banner ' + type;
+  }
+
+  function updateTurnBar() {
+    const bar = document.getElementById('turnBar');
+    bar.style.display = 'block';
+    bar.textContent = (current === 'X' ? '❌ ' : '⭕ ') + names[current] + ' ki baari';
+    bar.style.color = current === 'X' ? '#ff4d6d' : '#00c9a7';
+  }
+
+  function updateScores() {
+    document.getElementById('scoreX').textContent = scores.X;
+    document.getElementById('scoreO').textContent = scores.O;
+    document.getElementById('scoreDraw').textContent = scores.Draw;
+  }
+
+  function updateActiveCard() {
+    document.getElementById('cardX').className = 'score-card x-card' + (current === 'X' ? ' active-x' : '');
+    document.getElementById('cardO').className = 'score-card o-card' + (current === 'O' ? ' active-o' : '');
+  }
+
+  function nextRound() {
+    board = Array(9).fill('');
+    gameOver = false;
+    document.querySelectorAll('.cell').forEach(c => { c.textContent = ''; c.className = 'cell'; });
+    document.getElementById('resultBanner').className = 'result-banner';
+    current = 'X';
+    updateTurnBar();
+    updateActiveCard();
+  }
+
+  function resetAll() {
+    scores = { X: 0, O: 0, Draw: 0 };
+    updateScores();
+    nextRound();
+  }
+</script>
+</body>
+</html>
